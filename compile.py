@@ -1,10 +1,13 @@
 import time
-from archiver import compile_pcap
+from archiver import compile_pcaps
+
+
+ip = '10.30.133.16'
 
 
 def main():
     start_time = time.time()
-    compile_pcap()
+    compile_pcaps(dst_ip=ip)
     print(f"Архивация завершена за {time.time() - start_time:.2f} секунд.")
 
 

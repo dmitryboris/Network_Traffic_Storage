@@ -4,8 +4,8 @@ import zstandard as zstd
 from scapy.layers.l2 import Ether
 from scapy.utils import RawPcapReader, PcapWriter
 from config import PCAP_PATH, ARCHIVE_PATH, BATCH_SIZE, RESTORED_PCAP_PATH
-from utils import get_timestamp
-from db import insert_batch, load_next_batch
+from utils import get_timestamp, extract_mac_addresses, extract_ip_addresses
+from db import insert_batch, load_next_batch, get_by_dst_ip
 
 
 def process_pcap():
@@ -14,18 +14,20 @@ def process_pcap():
         cctx = zstd.ZstdCompressor(level=10)
         with cctx.stream_writer(f_out) as zstd_stream:
             with tarfile.open(mode='w|', fileobj=zstd_stream) as tar:
-                for i, (pkt, pkt_metadata) in enumerate(RawPcapReader(PCAP_PATH)):
-
-                    packet_data = (i, get_timestamp(pkt_metadata), pkt_metadata.wirelen)
+                for i, (pkt_bytes, pkt_metadata) in enumerate(RawPcapReader(PCAP_PATH)):
+                    pkt = Ether(pkt_bytes)
+                    src_mac, dst_mac = extract_mac_addresses(pkt)
+                    src_ip, dst_ip = extract_ip_addresses(pkt)
+                    packet_data = (ARCHIVE_PATH, i, get_timestamp(pkt_metadata), pkt_metadata.wirelen, src_mac, dst_mac, src_ip, dst_ip)
                     batch.append(packet_data)
 
                     if len(batch) >= BATCH_SIZE:
                         insert_batch(batch)
                         batch = []
 
-                    raw_buf = io.BytesIO(pkt)
+                    raw_buf = io.BytesIO(pkt_bytes)
                     raw_info = tarfile.TarInfo(name=f"{i}_packet.raw")
-                    raw_info.size = len(pkt)
+                    raw_info.size = len(pkt_bytes)
                     tar.addfile(raw_info, raw_buf)
 
                 if batch:
@@ -64,3 +66,7 @@ def compile_pcap():
                             pkt,
                             wirelen=wirelen  # без него пакеты битые
                         )
+
+def compile_pcaps(dst_ip=None, src_ip=None, src_mac=None, dst_mac=None):
+    data = get_by_dst_ip(dst_ip)
+    print(data)

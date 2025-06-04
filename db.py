@@ -4,9 +4,14 @@ from config import client
 def create_table():
     client.execute("""
     CREATE TABLE IF NOT EXISTS packets (
+        archive_path String,
         id UInt64,
         timestamp Float64,
-        wirelen UInt32
+        wirelen UInt32,
+        src_mac FixedString(17),
+        dst_mac FixedString(17), 
+        src_ip IPv4, 
+        dst_ip IPv4
     )
     ENGINE = MergeTree()
     ORDER BY id
@@ -33,3 +38,8 @@ def get_table_size():
 
 def load_next_batch(offset, batch_size):
     return client.execute(f"SELECT id, timestamp, wirelen FROM packets LIMIT {batch_size} OFFSET {offset}")
+
+
+def get_by_dst_ip(ip):
+    query = f"SELECT * FROM packets WHERE dst_ip = {ip} GROUP BY archive_path"
+    return client.execute(query)
