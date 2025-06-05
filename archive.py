@@ -6,7 +6,7 @@ from stats import print_stats
 
 def main():
     start_time = time.time()
-    drop_table()
+    # drop_table()
     create_table()
     process_pcap()
     print_stats()

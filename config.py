@@ -1,14 +1,21 @@
-from clickhouse_driver import Client
+import clickhouse_connect
 
-PCAP_PATH = r''
-ARCHIVE_PATH = r''
-RESTORED_PCAP_PATH = r''
+PCAP_PATH = r'C:\Users\Dima\Downloads\new\part1.pcap'
+ARCHIVE_PATH = r'C:\Users\Dima\Downloads\new\part1.tar.zst'
+RESTORED_PCAP_PATH = r'C:\Users\Dima\Downloads\new\COPY.pcap'
 BATCH_SIZE = 5000
 
-client = Client(
+client = clickhouse_connect.get_client(
     host='localhost',
-    port=9000,
-    user='default',
+    port=8123,
+    username='default',
     password='',
-    database='default'
+    database='default',
 )
+# client = Client(
+#     host='localhost',
+#     port=9000,
+#     user='default',
+#     password='',
+#     database='default'
+# )

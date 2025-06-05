@@ -5,7 +5,7 @@ from scapy.layers.l2 import Ether
 from scapy.utils import RawPcapReader, PcapWriter
 from config import PCAP_PATH, ARCHIVE_PATH, BATCH_SIZE, RESTORED_PCAP_PATH
 from utils import get_timestamp, extract_mac_addresses, extract_ip_addresses
-from db import insert_batch, load_next_batch, get_by_dst_ip
+from db import insert_batch, load_next_batch, get_archive_paths_by_dst_ip, get_packets_by_archive_path
 
 
 def process_pcap():
@@ -18,7 +18,10 @@ def process_pcap():
                     pkt = Ether(pkt_bytes)
                     src_mac, dst_mac = extract_mac_addresses(pkt)
                     src_ip, dst_ip = extract_ip_addresses(pkt)
-                    packet_data = (ARCHIVE_PATH, i, get_timestamp(pkt_metadata), pkt_metadata.wirelen, src_mac, dst_mac, src_ip, dst_ip)
+                    packet_data = (
+                        ARCHIVE_PATH, i, get_timestamp(pkt_metadata), pkt_metadata.wirelen, src_mac, dst_mac, src_ip,
+                        dst_ip
+                    )
                     batch.append(packet_data)
 
                     if len(batch) >= BATCH_SIZE:
@@ -67,6 +70,29 @@ def compile_pcap():
                             wirelen=wirelen  # без него пакеты битые
                         )
 
+
 def compile_pcaps(dst_ip=None, src_ip=None, src_mac=None, dst_mac=None):
-    data = get_by_dst_ip(dst_ip)
-    print(data)
+    archive_paths = get_archive_paths_by_dst_ip(dst_ip)
+    print(archive_paths)
+    with PcapWriter(RESTORED_PCAP_PATH, append=False, sync=True, linktype=1) as pcap:
+        pcap.write_header(None)
+        for archive_path in archive_paths:
+            packets_data = get_packets_by_archive_path(archive_path, dst_ip)
+            with open(archive_path, 'rb') as f_in:
+                with zstd.ZstdDecompressor().stream_reader(f_in) as zstd_stream:
+                    with tarfile.open(mode='r|', fileobj=zstd_stream) as tar:
+                        for i, member in enumerate(tar):
+                            data = packets_data.get(i, None)
+                            if not data:
+                                continue
+
+                            raw_packet = tar.extractfile(member).read()
+                            timestamp, wirelen = data
+
+                            pkt = Ether(raw_packet)
+                            pkt.time = timestamp
+
+                            pcap.write_packet(
+                                pkt,
+                                wirelen=wirelen
+                            )

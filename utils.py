@@ -25,12 +25,16 @@ def get_timestamp(pkt_metadata):
 
 
 def extract_mac_addresses(packet):
-    src_mac = packet[Ether].src
-    dst_mac = packet[Ether].dst
-    return src_mac, dst_mac
+    if Ether in packet:
+        src_mac = packet[Ether].src
+        dst_mac = packet[Ether].dst
+        return src_mac, dst_mac
+    return None, None
 
 
 def extract_ip_addresses(packet):
-    src_ip = packet[IP].src
-    dst_ip = packet[IP].dst
-    return src_ip, dst_ip
+    if IP in packet:
+        src_ip = packet[IP].src
+        dst_ip = packet[IP].dst
+        return src_ip, dst_ip
+    return None, None
