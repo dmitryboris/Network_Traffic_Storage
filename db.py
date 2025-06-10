@@ -72,5 +72,3 @@ def get_packets_by_archive_path(archive_path, dst_ip, src_ip, src_mac, dst_mac):
     print(basic_query)
     result = client.query(basic_query)
     return {row[0]: (row[1], row[2]) for row in result.result_rows}
-
-# print(get_packets_by_archive_path('path', None, None, None, None))

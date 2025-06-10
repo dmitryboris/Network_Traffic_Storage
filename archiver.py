@@ -71,8 +71,13 @@ def compile_pcap():
                         )
 
 
-def compile_pcaps(dst_ip=None, src_ip=None, src_mac=None, dst_mac=None):
+def compile_pcaps(dst_ip=None, src_ip=None, src_mac=None, dst_mac=None, start_timestamp=None, end_timestamp=None):
     archive_paths = get_archive_paths_by_dst_ip(dst_ip, src_ip, src_mac, dst_mac)
+    ts_segment = [float('-inf'), float('inf')]
+    if start_timestamp:
+        ts_segment[0] = start_timestamp
+    if end_timestamp:
+        ts_segment[1] = end_timestamp
     print(archive_paths)
     with PcapWriter(RESTORED_PCAP_PATH, append=False, sync=True, linktype=1) as pcap:
         pcap.write_header(None)
@@ -88,6 +93,10 @@ def compile_pcaps(dst_ip=None, src_ip=None, src_mac=None, dst_mac=None):
 
                             raw_packet = tar.extractfile(member).read()
                             timestamp, wirelen = data
+
+
+                            if not (ts_segment[0] <= timestamp <= ts_segment[1]):
+                                continue
 
                             pkt = Ether(raw_packet)
                             pkt.time = timestamp
