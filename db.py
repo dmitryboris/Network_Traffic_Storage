@@ -9,8 +9,8 @@ def create_table():
         timestamp Float64,
         wirelen UInt32,
         src_mac FixedString(17),
-        dst_mac FixedString(17), 
-        src_ip Nullable(IPv4), 
+        dst_mac FixedString(17),
+        src_ip Nullable(IPv4),
         dst_ip Nullable(IPv4)
     )
     ENGINE = MergeTree()
@@ -43,15 +43,34 @@ def load_next_batch(offset, batch_size):
     return client.query(f"SELECT id, timestamp, wirelen FROM packets LIMIT {batch_size} OFFSET {offset}")
 
 
-def get_archive_paths_by_dst_ip(ip):
-    query = f"SELECT DISTINCT archive_path FROM packets WHERE dst_ip = '{ip}'"
-    result = client.query(query)
+def get_archive_paths_by_dst_ip(dst_ip, src_ip, src_mac, dst_mac):
+    params = {
+        dst_ip: lambda x: f" AND dst_ip = '{x}'" if x else "",
+        src_ip: lambda x: f" AND src_ip = '{x}'" if x else "",
+        src_mac: lambda x: f" AND src_mac = '{x}'" if x else "",
+        dst_mac: lambda x: f" AND dst_mac = '{x}'" if x else "",
+    }
+    basic_query = f"SELECT DISTINCT archive_path FROM packets WHERE 1"
+    for key, func in params.items():
+        basic_query += params[key](key)
+    result = client.query(basic_query)
     rows = result.result_rows
     return [row[0] for row in rows]
 
 
-def get_packets_by_archive_path(archive_path, dst_ip):
+def get_packets_by_archive_path(archive_path, dst_ip, src_ip, src_mac, dst_mac):
     archive_path = archive_path.replace("\\", "\\\\")
-    query = f"SELECT id, timestamp, wirelen FROM packets WHERE archive_path = '{archive_path}' AND dst_ip = '{dst_ip}'"
-    result = client.query(query)
+    params = {
+        dst_ip: lambda x: f" AND dst_ip = '{x}'" if x else "",
+        src_ip: lambda x: f" AND src_ip = '{x}'" if x else "",
+        src_mac: lambda x: f" AND src_mac = '{x}'" if x else "",
+        dst_mac: lambda x: f" AND dst_mac = '{x}'" if x else "",
+    }
+    basic_query = f"SELECT id, timestamp, wirelen FROM packets WHERE archive_path = '{archive_path}'"
+    for key, func in params.items():
+        basic_query += params[key](key)
+    print(basic_query)
+    result = client.query(basic_query)
     return {row[0]: (row[1], row[2]) for row in result.result_rows}
+
+# print(get_packets_by_archive_path('path', None, None, None, None))

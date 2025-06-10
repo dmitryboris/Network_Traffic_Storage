@@ -72,12 +72,12 @@ def compile_pcap():
 
 
 def compile_pcaps(dst_ip=None, src_ip=None, src_mac=None, dst_mac=None):
-    archive_paths = get_archive_paths_by_dst_ip(dst_ip)
+    archive_paths = get_archive_paths_by_dst_ip(dst_ip, src_ip, src_mac, dst_mac)
     print(archive_paths)
     with PcapWriter(RESTORED_PCAP_PATH, append=False, sync=True, linktype=1) as pcap:
         pcap.write_header(None)
         for archive_path in archive_paths:
-            packets_data = get_packets_by_archive_path(archive_path, dst_ip)
+            packets_data = get_packets_by_archive_path(archive_path, dst_ip, src_ip, src_mac, dst_mac)
             with open(archive_path, 'rb') as f_in:
                 with zstd.ZstdDecompressor().stream_reader(f_in) as zstd_stream:
                     with tarfile.open(mode='r|', fileobj=zstd_stream) as tar:
