@@ -23,8 +23,10 @@ macOS / Linux:
 ```pip3 install -r requirements.txt```
 
 6. Run ClickHouse in Docker
+
    ```docker run -d --name clickhouse-server -p 9000:9000 -p 8123:8123 -p 9009:9009 -e CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1 -e CLICKHOUSE_USER=default -e CLICKHOUSE_PASSWORD= clickhouse/clickhouse-server```
 
 8. Archive using archive.py
-9. Compile using compile.py
+
+10. Compile using compile.py
 
