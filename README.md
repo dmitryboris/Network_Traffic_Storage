@@ -1,6 +1,6 @@
 # Network_Traffic_Storage
 
-We save some meta-information fields (MAC addresses, IP addresses) in ClickHouse, and archive the raw part of the packet using zstd.
+We save some meta-information fields (MAC addresses, IP addresses etc.) in ClickHouse, and archive the raw part of the packet using zstd.
 Then you can assemble the packets into .pcap by the fields you need.
 
 1. Cloning a repository
